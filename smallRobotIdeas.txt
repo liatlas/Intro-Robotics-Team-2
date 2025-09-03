@@ -3,3 +3,5 @@
 3. Water-Level Check Bot
 4. Burglary Robot
 5. Screen-time Robot
+6. Sorting Robot where items/objects are given designated positions and the robot brings them back when they are no in them
+
