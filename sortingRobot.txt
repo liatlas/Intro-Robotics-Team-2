@@ -1,0 +1,180 @@
+SORTING ROBOT
+
+                           ***Toy/room cleanup bot***  
+Problem/value: Helps families quickly clear floors; safety (no tripping).  
+MVP:
+- End-effector: Scoop-style spatula + overhand gripper (two-stage).
+- Perception: YOLO-tiny for “block/ball/doll” classes; floor plane segmentation.
+- Mobility: Small differential-drive base; docking bin on board.
+- Software: Simple frontier navigation + pick-place into internal bin.
+- Success metric: Clears 80% of scattered items in a 3×3 m area in ≤10 min.
+
+
+
+What problem it solves / value:  
+Quickly gathers scattered small toys/objects off the floor into an on-board bin so a dorm room or kid’s room is tidier faster. Low complexity, high demo value, safe to operate around people/feet.
+
+
+
+High-level approach (keeps Arduino constraints in mind):  
+A small differential-drive mobile base that roams the floor, detects objects using a light sensor / cheap vision proxy (color sensor or simple IR distance + shape heuristics), scoops or pushes objects into a front-facing collection bin. No heavy computer vision required — rely on color/IR/size heuristics and simple behavior rules.
+
+
+
+MVP features
+- Autonomous roaming (random/coverage) with obstacle avoidance.
+- Detect object on the floor → approach → scoop/pick → deposit into onboard container.
+- Simple item classification optional (toy vs. non-toy) using color or size thresholds.
+- Safety: low speed, bump sensors, e-stop button.
+
+
+
+Core components (approx prices)
+- Arduino Uno or Nano clone — $8–12
+- 2× DC gear motors + wheels + chassis kit (basic) — $12–20
+- Motor driver (L298N or TB6612) — $4–8
+- 2× micro servo (SG90) for a small scoop mechanism or gripper — $6 total ($3 each)
+- Ultrasonic distance sensor HC-SR04 (for obstacle avoidance) — $2–3
+- IR proximity / line sensors (or short-range IR distance) ×3 (front left/front right/rear) — $6–8 for a small pack
+- Color sensor (TCS3200) OR a simple light sensor / reflectance sensor to detect objects — $6–10 (optional; if budget tight, omit and use IR + bump)
+- Bumper switches (2–3) for physical contact detection — $3
+- 7.4V LiPo pack or 6×AA battery holder + switch — $8–15
+- Small breadboard, jumper wires, screws, hot glue, misc — $6–8
+
+
+
+Mechanical idea (keep it simple)
+- Use a low-profile scoop (servo actuated) front mounted — think a plastic spatula hinged so servo can tilt it under an object and lift slightly to dump into an onboard bin. Build scoop from thin plastic, 3D print, or even cardboard reinforced with hot glue as a first prototype.
+- Alternatively, a one-servo two-finger gripper can pinch and lift flat toys; but scoop is simpler and more robust for varied shapes.
+
+
+
+Sensing & perception (Arduino-friendly)
+- Use HC-SR04 to detect candidate objects ahead (distance shorter than floor clearance threshold).
+- Confirm with bumper switch or color/reflectance sensor reading to avoid false triggers. If you use TCS3200 you can read color and decide "toy (color present) → pick". If no color sensor, rely on proximity + bump.
+
+
+
+Control architecture (Arduino sketch structure)
+- State machine: SEARCH -> APPROACH -> PICK -> VERIFY -> DEPOSIT -> BACKUP -> SEARCH
+- Timers and simple PID for straight driving (optional).
+- Safety interrupts for bump/e-stop.
+
+
+
+Performance targets / test metrics
+- Success metric: pick ≥ 60–80% of single small toys (e.g., blocks, balls ≤5–8 cm) from a 3×3 m area within 10 minutes.
+- Robustness: should recover from failed pick attempts (try again 2× then skip).
+- Safety: stop if collision force large or e-stop pressed.
+
+
+
+Week-by-week build plan (5 weeks)
+1. Week 1: Assemble chassis + motors + motor driver; implement basic drive + remote stop.
+2. Week 2: Add obstacle avoidance (ultrasonic + bumpers). Test wandering.
+3. Week 3: Build scoop mechanism + servo control. Test static scoop with hand-placed objects.
+4. Week 4: Integrate perception heuristics (HC-SR04 trigger + bump/color confirmation) and implement state machine.
+5. Week 5: Testing + tuning; demo and record metrics; fixes.
+
+
+
+Stretch upgrades (if extra budget or you reuse a phone)
+- Use a smartphone as camera + run object detection app; communicate with Arduino via Bluetooth to send pick commands (gives better detection/classification).
+- Replace scooping with suction (hard under budget) or dual-servo gripper for more precise picks.
+- Add small onboard bin weight sensor to know fullness.  
+      
+    
+
+                      ***Simplified Desktop Bin-Picking (Arduino scaled-down)***
+What problem it models/value:  
+Replicates the core industrial task: pick items from a mixed “bin” and place into order slots/totes. For a college demo this proves grasping + routing logic without full industrial speed. Use desktop scale, color/code tags, and mechanical simplicity.
+
+
+
+Two practical hardware options (pick one based on parts availability)
+Option A — Stationary 2-axis gantry + scoop/dropper (cheapest)
+- A small XY gantry can be made from sliders, belts, or even linear rails made from drawer slides and servo actuated motion (or repurpose continuous rotation servos). This is more DIY but cheaper than a full arm.
+- Fixed bin with items in known coarse locations (or a simple vibrating feeder you trigger manually). Arduino controls X & Y movement (two motors) and a servo for pick/drop.
+Option B — Small hobby arm (3 DOF) made from servos (more intuitive)
+- Build a small arm from 3–4 hobby servos, laser-cut or 3D printed links. Works for light items, simpler kinematics (approximate inverse kinematics via lookup tables). More straightforward to demo pick-and-place.
+
+
+
+MVP features
+- Pick items by color (3 colors) from a small source area into 3 target totes.
+- Use a color sensor (TCS3200) or simple photodiode/color filter under a fixed pick position — or feed objects one-by-one with a simple chute so the pick site is predictable.
+- Basic verification: sensor at drop location confirms presence.
+- Simple user interface: start button → run a small batch.
+
+
+
+Core components (approx prices)
+- Arduino Uno/Nano — $8–12
+- 3–4× SG90 micro servos (arm joints + gripper) — $9–12 total
+- Small hobby gripper (or DIY two-finger from servo) — included above
+- Color sensor TCS3200 — $6–10 (or use photodiodes + colored filters)
+- Small platform / base (wood or acrylic) + fasteners — $5–8
+- 1× micro switch sensor for "item present" and 1× for drop confirmation — $3
+- Power: 5V USB power bank or battery pack — $8–12
+- Misc (breadboard, wires, hot glue) — $6
+
+
+
+Perception approach (Arduino limitations)
+- Keep perception _minimal and localize the pick position_. Two approaches:
+1. Predictable feed: Use a manual or gravity-fed chute that presents one item at a time at a fixed pick location. Use a presence switch/photo-interrupter to confirm. Read the color sensor at that fixed location to decide destination. This eliminates complex vision entirely.
+2. Color sensor array across multiple source bins: Scan each bin with TCS3200 mounted on the gripper as you visit it.
+
+
+
+Control architecture (Arduino)
+- Simple sequence: WAIT_FOR_ITEM -> SCAN_COLOR -> PICK -> MOVE_TO_TARGET -> DROP -> RETURN — repeat until batch done.
+
+
+
+Mechanical pick method
+- Use a two-servo gripper: one servo rotates shoulder, another rotates elbow, third operates the gripper. Use simple precomputed angles (or very simple inverse kinematics) since workspace is small and repeatable.
+- If servo arm is too hard, use a sweep & scoop: a servo rotates a paddle to push an object from the pick spot across to the correct chute based on color decision — very cheap and robust.
+
+
+
+Success metrics / testing
+- Correct routing accuracy ≥90% for 30 items.
+- Cycle time: aim for 20–60 s per item (Arduino + servos are slow; that’s OK for demo).
+- Recovery: handle jams by detecting no-grip (limit switch on gripper) and retry.
+
+
+
+Week-by-week build plan (4 weeks)
+1. Week 1: Build fixed feed chute with presence sensor + color sensor readout. Test classification.
+2. Week 2: Build and test pick mechanism (servo gripper or paddle). Calibrate positions.
+3. Week 3: Implement routing logic and target positions; full pick-and-place loop.
+4. Week 4: Tune, add counter/LEDs to indicate progress, prepare demo.
+
+
+
+Stretch upgrades (if you can borrow a smartphone or an RPi)
+- Use the phone camera + a tiny object detector app to do color/shape detection and send the “pick here / target” via Bluetooth/Serial to the Arduino — gives real perception without needing a Jetson.
+- Add barcode/QR stickers and an inexpensive USB barcode scanner (often >$20) if you need SKU verification.
+
+
+
+Cross-project common tips & constraints with Arduino
+- Perception limits: Arduino is great for sensors and real-time control, but not for heavy vision. For anything non-trivial consider using the phone-as-camera + Bluetooth or a small SBC (Raspberry Pi) later. But for class demos, color sensors + presence sensors + deterministic feeders work great.
+- Grippers: Soft silicone fingertips (hot glue or silicone) improve friction and reduce slips. Keep grip force low.
+- Powering servos: Use a separate battery for servos (or a regulated 5–6V pack) — do not power servos from Arduino 5V regulator.
+- Debounce & filtering: For ultrasonic/IR sensors, average multiple readings to avoid false positives while approaching picks.
+- Safety: Low speed, current limits on motors, and an obvious kill switch.
+
+
+
+Quick shopping checklist
+- Arduino Uno/Nano clone — $10
+- Chassis + 2× gear motors (for cleanup bot) — $15
+- L298N motor driver — $6
+- 3–4× SG90 servos — $12
+- HC-SR04 ultrasonic sensor — $3
+- TCS3200 color sensor — $8
+- Bumper switches (x3) — $3
+- Battery pack (6×AA) or 5V power bank — $10
+- Breadboard/jumper wires/misc — $8
